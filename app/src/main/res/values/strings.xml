@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">The Genius List</string>
+    <string name="textView_username">Username</string>
+    <string name="textView_email">Email</string>
+</resources>
