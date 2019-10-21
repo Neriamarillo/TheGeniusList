@@ -1,7 +1,7 @@
 # TheGeniusList
 
 The Genius List is designed to demonstrate API handling in an Android application.  
-List will auto-populate from the API and will process the adding a user POST request on clicking the Floating Action Button.  
+List will auto-populate from the API (https://reqres.in/api/users) and will process the adding a user POST request to the API (https://reqres.in/api/users) on clicking the Floating Action Button.  
 
 ## Architecture
 * [Kotlin](https://kotlinlang.org/) for the ease of use and ease of code readability
