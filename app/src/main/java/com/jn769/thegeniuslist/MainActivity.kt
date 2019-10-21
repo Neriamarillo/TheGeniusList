@@ -1,16 +1,13 @@
 package com.jn769.thegeniuslist
 
-import android.content.DialogInterface
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.gson.GsonBuilder
 import kotlinx.android.synthetic.main.activity_main.*
-import okhttp3.*
-import java.io.IOException
-import okhttp3.RequestBody.Companion.toRequestBody
+import retrofit2.Call
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
 
@@ -23,82 +20,71 @@ class MainActivity : AppCompatActivity() {
         fab.setOnClickListener {
 
             // Sample string for testing POST Response
-            addUser("George Costanza")
+            addUser("George Costanza", "Manager")
         }
 
-
-        fetchJson()
-
+        getUsers()
 
     }
 
-    private fun fetchJson() {
 
-        val requestUrl = "https://reqres.in/api/users"
-        val request = Request.Builder().url(requestUrl).build()
-        val client = OkHttpClient()
+    private fun getUsers() {
+        val service = ApiClient.instance
+        val call = service.getUserList()
 
-        // Asynchronous GET task using enqueue
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                println(e)
-
+        call.enqueue(object : retrofit2.Callback<UserList> {
+            override fun onFailure(call: Call<UserList>, t: Throwable) {
+                Toast.makeText(applicationContext, "Error reading JSON", Toast.LENGTH_LONG).show()
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                if (!response.isSuccessful) throw IOException("Unexpected code $response")
-
-                val body = response.body?.string()
-                println(body)
-
-                val gson = GsonBuilder().create()
-
-                val userList = gson.fromJson(body, Data::class.java)
+            override fun onResponse(
+                call: Call<UserList>,
+                response: Response<UserList>
+            ) {
+                val userList = response.body()
+                val page = userList?.page
+                val total = userList?.total
+                val totalPages = userList?.totalPages
+                val dataList = userList?.data
 
                 runOnUiThread {
-                    recyclerView_main.adapter = UserAdapter(userList)
+                    recyclerView_main.adapter = UserAdapter(dataList)
                 }
+
             }
+
         })
 
     }
 
-    private fun addUser(user: String) {
 
-        val client = OkHttpClient()
-        val requestUrl = "https://reqres.in/api/users"
-        val postBody = user.toRequestBody()
-        val request = Request.Builder()
-            .method("POST", postBody)
-            .url(requestUrl)
-            .build()
+    private fun addUser(userName: String, job: String) {
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                println(e)
+        val service = ApiClient.instance
+        val newUser = User(userName, job)
+        val call = service.createUser(newUser)
+
+        call.enqueue(object : retrofit2.Callback<User> {
+            override fun onFailure(call: Call<User>, t: Throwable) {
+                Toast.makeText(applicationContext, "Error creating new user", Toast.LENGTH_LONG)
+                    .show()
 
             }
 
-            override fun onResponse(call: Call, response: Response) {
-                if (!response.isSuccessful) throw IOException("Unexpected code $response")
-
-                println(response)
+            override fun onResponse(call: Call<User>, response: Response<User>) {
                 runOnUiThread {
 
                     // Small dialog to display Status Code for confirmation of POST request success
                     val dialogBuilder = AlertDialog.Builder(this@MainActivity)
                     dialogBuilder
                         .setTitle("POST Request")
-                        .setMessage("Status Code: " + response.code)
+                        .setMessage("Status Code: " + response.code())
                         .setNegativeButton(
                             "Ok"
                         ) { dialog, _ -> dialog.cancel() }
                         .show()
 
                 }
-
-                // GET the data again from the server to reflect the newly added item.
-                fetchJson()
 
             }
 
@@ -108,7 +94,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        fetchJson()
+        getUsers()
     }
 
 
